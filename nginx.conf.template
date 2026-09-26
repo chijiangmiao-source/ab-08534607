@@ -1,0 +1,18 @@
+# nginx 站点配置模板。
+# 官方 nginx 镜像启动时会用环境变量替换 /etc/nginx/templates/*.template
+# 并输出到 /etc/nginx/conf.d/，借此实现端口可配（PORT）。
+# 配置中刻意不使用任何 nginx 自身变量（如 $uri），避免被 envsubst 误替换。
+server {
+    listen ${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # 健康检查端点（Docker HEALTHCHECK 与 Compose depends_on 使用）
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+}

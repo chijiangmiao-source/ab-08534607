@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>束流诊断柜 · 读出通道频段分配</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: #f4f6f8;
+      color: #1f2933;
+      line-height: 1.6;
+    }
+    main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    h2 { font-size: 1.05rem; margin: 0 0 8px; }
+    .sub { color: #62707e; font-size: 0.9rem; margin: 0 0 20px; }
+    section {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    label { display: block; font-weight: 600; margin: 12px 0 4px; }
+    label .hint { font-weight: 400; color: #62707e; font-size: 0.85rem; }
+    textarea {
+      width: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 10px;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid #2563eb; outline-offset: -1px; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+    button {
+      border: 1px solid #2563eb;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button.secondary { background: #fff; color: #2563eb; }
+    button.plain { background: #fff; color: #475569; border-color: #cbd5e1; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { font-size: 0.9rem; color: #62707e; }
+    #status[data-kind="running"] { color: #b45309; }
+    #status[data-kind="ok"] { color: #15803d; }
+    #status[data-kind="error"] { color: #b91c1c; }
+    #error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+    .chi { font-size: 2rem; font-weight: 700; color: #1d4ed8; }
+    .chi small { font-size: 0.9rem; font-weight: 400; color: #62707e; }
+    table { border-collapse: collapse; margin-top: 4px; }
+    th, td { border: 1px solid #e2e8f0; padding: 4px 14px; font-size: 0.9rem; text-align: left; }
+    th { background: #f8fafc; }
+    ul { margin: 4px 0; padding-left: 20px; }
+    #proof { color: #62707e; font-size: 0.85rem; margin-top: 10px; }
+    .examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .examples button { font-size: 0.8rem; padding: 4px 10px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>束流诊断柜 · 读出通道频段分配</h1>
+    <p class="sub">
+      改接后为相互干扰的读出通道分配最少频段。求解在浏览器 Worker 中以确定性
+      DSATUR 分支定界精确判定色数（已知可行上界 + 可证明下界剪枝），结果与录入顺序无关。
+    </p>
+
+    <section>
+      <h2>录入</h2>
+      <label for="channels">
+        通道标识 <span class="hint">2~26 个唯一大写字母 A-Z，逗号或空白分隔</span>
+      </label>
+      <textarea id="channels" rows="2" spellcheck="false"></textarea>
+
+      <label for="edges">
+        干扰关系 <span class="hint">每行一条无向关系 X-Y，至多 120 条</span>
+      </label>
+      <textarea id="edges" rows="7" spellcheck="false"></textarea>
+
+      <div class="examples">
+        <button type="button" class="plain" data-example="triangle">示例：三角冲突</button>
+        <button type="button" class="plain" data-example="clique4">示例：四通道完全冲突</button>
+        <button type="button" class="plain" data-example="path">示例：二分链式</button>
+      </div>
+
+      <div class="toolbar">
+        <button id="submit" type="button">提交求解</button>
+        <button id="cancel" type="button" class="secondary" disabled>取消</button>
+        <span id="status" role="status"></span>
+      </div>
+      <div id="error" role="alert" hidden></div>
+    </section>
+
+    <section id="result" hidden>
+      <h2>结论</h2>
+      <p class="chi"><span id="chi"></span> <small>个频段（最少，已精确判定）</small></p>
+
+      <h2>规范频段分配（按通道标识升序裁决）</h2>
+      <table>
+        <thead><tr><th>通道</th><th>频段</th></tr></thead>
+        <tbody id="assignment"></tbody>
+      </table>
+
+      <h2 style="margin-top:14px">各频段通道清单（组内不存在干扰边）</h2>
+      <ul id="bands"></ul>
+
+      <p id="proof"></p>
+      <div class="toolbar">
+        <button id="recheck" type="button" class="secondary">复算校验</button>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

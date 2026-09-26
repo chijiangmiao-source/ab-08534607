@@ -1,0 +1,10 @@
+{
+  "name": "band-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "束流诊断柜读出通道频段分配（精确 DSATUR 分支定界图着色）",
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

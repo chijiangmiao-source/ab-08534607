@@ -1,0 +1,41 @@
+name: band-assignment
+
+services:
+  # 频段分配页面：nginx 静态托管，端口可配（PORT，默认 8080），带健康检查。
+  web:
+    build: .
+    environment:
+      PORT: ${PORT:-8080}
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:$${PORT}/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - appnet
+
+  # 验证服务：围绕三角冲突与输入重排运行代码测试、构建检查与页面 HTTP 冒烟，
+  # 完成后退出并以退出码报告结果（0 = 全部通过）。
+  # 用法：docker compose up --exit-code-from verify verify
+  verify:
+    build:
+      context: .
+      target: assets
+    image: band-assignment-verify
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      WEB_URL: "http://web:${PORT:-8080}"
+    volumes:
+      - .:/app:ro
+    working_dir: /app
+    command: ["sh", "./verify.sh"]
+    networks:
+      - appnet
+
+networks:
+  appnet:
